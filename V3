@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Enhanced Dark/Light Mode & Settings Panel v3</title>
+  <style>
+    :root {
+      --bg-color-light: #ffffff;
+      --text-color-light: #000000;
+      --bg-color-dark: #333333;
+      --text-color-dark: #ffffff;
+      --transition-duration: 0.4s;
+      
+      /* Accent variables for light theme */
+      --accent-color: #2196F3;
+      --accent-gradient: linear-gradient(90deg, #2196F3, #1E88E5);
+      
+      /* Button color variables for light theme */
+      --button-bg: #e0e0e0;
+      --button-text: #000;
+      --button-bg-hover: #d0d0d0;
+      
+      /* Panel border for light theme */
+      --panel-border: #ccc;
+    }
+    [data-theme="dark"] {
+      --button-bg: #555;
+      --button-text: #fff;
+      --button-bg-hover: #444;
+      --panel-border: #666;
+    }
+    
+    body {
+      background-color: var(--bg-color-light);
+      color: var(--text-color-light);
+      transition: background-color var(--transition-duration), color var(--transition-duration);
+      font-family: sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      margin: 2rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body.dark-mode {
+      background-color: var(--bg-color-dark);
+      color: var(--text-color-dark);
+    }
+    /* Compact mode reduces margins/padding */
+    body.compact-mode {
+      margin: 0.5rem;
+      padding: 0.5rem;
+    }
+    
+    /* Accent Splashes Container */
+    #accentSplashes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    .splash {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      filter: blur(10px);
+      opacity: 0.3;
+    }
+    
+    /* Toggle Switch Styles */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+      margin-right: 1rem;
+      vertical-align: middle;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: background-color var(--transition-duration);
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: transform var(--transition-duration);
+      border-radius: 50%;
+    }
+    /* Use accent gradient for light mode and dark gray for dark mode */
+    [data-theme="light"] input:checked + .slider {
+      background: var(--accent-gradient);
+    }
+    [data-theme="dark"] input:checked + .slider {
+      background-color: #555;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .slider img {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      transition: opacity var(--transition-duration);
+    }
+    .slider .light-icon {
+      left: 6px;
+      opacity: 1;
+    }
+    .slider .dark-icon {
+      right: 6px;
+      opacity: 0;
+    }
+    input:checked + .slider .light-icon {
+      opacity: 0;
+    }
+    input:checked + .slider .dark-icon {
+      opacity: 1;
+    }
+    
+    /* Reset Button - Rectangular and dynamic */
+    .reset-button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      transition: background-color 0.3s;
+      vertical-align: middle;
+    }
+    .reset-button:hover {
+      background-color: var(--button-bg-hover);
+    }
+    
+    /* Settings Panel Styles */
+    .settings-panel {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      max-width: 300px;
+    }
+    .settings-panel h3 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+    }
+    .setting-item {
+      margin-bottom: 1rem;
+    }
+    .setting-item label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    
+    /* Hide live region */
+    #theme-status {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    
+    /* Disable animations if needed */
+    body.no-animations * {
+      transition: none !important;
+    }
+  </style>
+</head>
+<body class="light-mode">
+  <h2>Enhanced Dark/Light Mode Toggle & Settings</h2>
+  
+  <!-- Dark/Light toggle switch -->
+  <label class="switch" aria-label="Toggle dark/light mode">
+    <input type="checkbox" id="modeToggle">
+    <span class="slider">
+      <img src="https://cdn0.iconfinder.com/data/icons/multimedia-solid-30px/30/sun_light_mode_day-512.png" class="light-icon" alt="Light Mode">
+      <img src="https://cdn3.iconfinder.com/data/icons/photography-127/128/a-19-512.png" class="dark-icon" alt="Dark Mode">
+    </span>
+  </label>
+  
+  <!-- Reset to system default button -->
+  <button class="reset-button" id="resetPreference">Reset to System Default</button>
+  
+  <!-- ARIA live region to announce theme changes -->
+  <div id="theme-status" aria-live="polite"></div>
+  
+  <!-- Additional Settings Panel -->
+  <div class="settings-panel">
+    <h3>General Settings</h3>
+    <!-- Font Size Adjustment -->
+    <div class="setting-item">
+      <label for="fontSizeSlider">Font Size: <span id="fontSizeValue">16</span>px</label>
+      <input type="range" id="fontSizeSlider" min="14" max="24" value="16">
+    </div>
+    <!-- Animation Toggle -->
+    <div class="setting-item">
+      <label for="animationToggle">
+        <input type="checkbox" id="animationToggle" checked> Enable Animations
+      </label>
+    </div>
+    <!-- Accent Color Picker with Color Wheel -->
+    <div class="setting-item">
+      <label for="accentColorPicker">Accent Color:</label>
+      <input type="color" id="accentColorPicker" value="#2196F3">
+    </div>
+    <!-- Accent Splashes Toggle -->
+    <div class="setting-item">
+      <label for="splashToggle">
+        <input type="checkbox" id="splashToggle" checked> Enable Accent Splashes
+      </label>
+    </div>
+    <!-- Splash Parallax Toggle -->
+    <div class="setting-item">
+      <label for="splashParallaxToggle">
+        <input type="checkbox" id="splashParallaxToggle" checked> Enable Splash Parallax
+      </label>
+    </div>
+    <!-- Splash Intensity Slider -->
+    <div class="setting-item">
+      <label for="splashIntensitySlider">Splash Intensity: <span id="splashIntensityValue">20</span>px</label>
+      <input type="range" id="splashIntensitySlider" min="10" max="50" value="20">
+    </div>
+  </div>
+  
+  <!-- Accent Splashes Container -->
+  <div id="accentSplashes"></div>
+  
+  <script>
+    (function() {
+      const toggleSwitch = document.getElementById('modeToggle');
+      const resetButton = document.getElementById('resetPreference');
+      const themeStatus = document.getElementById('theme-status');
+      const bodyElement = document.body;
+      const darkModeClass = 'dark-mode';
+      const accentColorPicker = document.getElementById('accentColorPicker');
+      const splashToggle = document.getElementById('splashToggle');
+      const splashParallaxToggle = document.getElementById('splashParallaxToggle');
+      const splashIntensitySlider = document.getElementById('splashIntensitySlider');
+      const splashIntensityValue = document.getElementById('splashIntensityValue');
+      const accentSplashesContainer = document.getElementById('accentSplashes');
+      
+      // Helper function: darken a hex color by a given percentage
+      function darkenColor(hex, percent) {
+        hex = hex.replace(/^#/, '');
+        let num = parseInt(hex, 16);
+        let r = (num >> 16) & 0xFF;
+        let g = (num >> 8) & 0xFF;
+        let b = num & 0xFF;
+        r = Math.max(0, Math.min(255, Math.floor(r * (1 - percent))));
+        g = Math.max(0, Math.min(255, Math.floor(g * (1 - percent))));
+        b = Math.max(0, Math.min(255, Math.floor(b * (1 - percent))));
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      }
+      
+      // Function to generate a gradient from the chosen accent color
+      function updateAccentGradient(accent) {
+        const darkAccent = darkenColor(accent, 0.2);
+        const gradient = `linear-gradient(90deg, ${accent}, ${darkAccent})`;
+        document.documentElement.style.setProperty('--accent-gradient', gradient);
+        document.documentElement.style.setProperty('--accent-color', accent);
+        if (splashToggle.checked) {
+          generateSplashes();
+        }
+      }
+      
+      // Initial accent gradient update using default value
+      updateAccentGradient(accentColorPicker.value);
+      
+      // Function to apply the theme
+      function applyTheme(theme) {
+        if (theme === 'dark') {
+          bodyElement.classList.add(darkModeClass);
+          toggleSwitch.checked = true;
+          document.documentElement.setAttribute('data-theme', 'dark');
+          themeStatus.textContent = "Dark mode activated";
+        } else {
+          bodyElement.classList.remove(darkModeClass);
+          toggleSwitch.checked = false;
+          document.documentElement.setAttribute('data-theme', 'light');
+          themeStatus.textContent = "Light mode activated";
+        }
+      }
+      
+      // Retrieve stored theme from localStorage (if any)
+      let storedTheme = localStorage.getItem('theme');
+      
+      // Function to detect the system's preferred theme
+      function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      
+      // Use stored theme if available; otherwise, use system preference
+      let currentTheme = storedTheme ? storedTheme : getSystemTheme();
+      applyTheme(currentTheme);
+      
+      // Toggle event listener to change theme
+      toggleSwitch.addEventListener('change', function() {
+        currentTheme = this.checked ? 'dark' : 'light';
+        applyTheme(currentTheme);
+        localStorage.setItem('theme', currentTheme);
+      });
+      
+      // Reset button event listener to clear user preference
+      resetButton.addEventListener('click', function() {
+        localStorage.removeItem('theme');
+        currentTheme = getSystemTheme();
+        applyTheme(currentTheme);
+      });
+      
+      // Listen for system color scheme changes if no explicit user preference is stored
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', function(e) {
+        if (!localStorage.getItem('theme')) {
+          currentTheme = e.matches ? 'dark' : 'light';
+          applyTheme(currentTheme);
+        }
+      });
+      
+      // Additional Settings: Font Size Adjustment
+      const fontSizeSlider = document.getElementById('fontSizeSlider');
+      const fontSizeValue = document.getElementById('fontSizeValue');
+      fontSizeSlider.addEventListener('input', function() {
+        const size = this.value;
+        document.body.style.fontSize = size + 'px';
+        fontSizeValue.textContent = size;
+      });
+      
+      // Additional Settings: Enable/Disable Animations
+      const animationToggle = document.getElementById('animationToggle');
+      animationToggle.addEventListener('change', function() {
+        if (this.checked) {
+          document.body.classList.remove('no-animations');
+        } else {
+          document.body.classList.add('no-animations');
+        }
+      });
+      
+      // Additional Settings: Accent Color Picker
+      accentColorPicker.addEventListener('input', function() {
+        updateAccentGradient(this.value);
+      });
+      
+      // Additional Settings: Splash Intensity Adjustment
+      splashIntensitySlider.addEventListener('input', function() {
+        splashIntensityValue.textContent = this.value;
+        if (splashToggle.checked) {
+          // Regenerate splashes with new intensity (by regenerating splashes)
+          generateSplashes();
+        }
+      });
+      
+      // Accent Splashes Generation
+      function generateSplashes() {
+        accentSplashesContainer.innerHTML = '';
+        const numSplashes = 15;
+        const intensity = parseFloat(splashIntensitySlider.value); // intensity factor in pixels
+        for (let i = 0; i < numSplashes; i++) {
+          const splash = document.createElement('div');
+          splash.className = 'splash';
+          const size = Math.floor(Math.random() * 100) + 50;
+          splash.style.width = size + 'px';
+          splash.style.height = size + 'px';
+          const posX = Math.floor(Math.random() * window.innerWidth);
+          const posY = Math.floor(Math.random() * window.innerHeight);
+          splash.dataset.originLeft = posX;
+          splash.dataset.originTop = posY;
+          splash.style.left = posX + 'px';
+          splash.style.top = posY + 'px';
+          const rotation = Math.floor(Math.random() * 360);
+          splash.style.transform = `rotate(${rotation}deg)`;
+          const opacity = (Math.random() * 0.3) + 0.2;
+          splash.style.opacity = opacity;
+          // Assign a random depth factor for parallax (0.2 to 1)
+          splash.dataset.depth = (Math.random() * 0.8 + 0.2).toFixed(2);
+          accentSplashesContainer.appendChild(splash);
+        }
+      }
+      
+      // Initial generation of accent splashes if enabled
+      if (splashToggle.checked) {
+        generateSplashes();
+      }
+      
+      // Event listener for the accent splashes toggle
+      splashToggle.addEventListener('change', function() {
+        if (this.checked) {
+          generateSplashes();
+        } else {
+          accentSplashesContainer.innerHTML = '';
+        }
+      });
+      
+      // Parallax effect: update splash positions on mousemove
+      window.addEventListener('mousemove', function(e) {
+        if (!splashParallaxToggle.checked || !splashToggle.checked) return;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const offsetX = (e.clientX - centerX) / centerX; // normalized [-1, 1]
+        const offsetY = (e.clientY - centerY) / centerY;
+        const splashes = accentSplashesContainer.getElementsByClassName('splash');
+        Array.from(splashes).forEach(splash => {
+          const originX = parseFloat(splash.dataset.originLeft);
+          const originY = parseFloat(splash.dataset.originTop);
+          const depth = parseFloat(splash.dataset.depth);
+          // Calculate offset based on depth and intensity factor
+          const moveX = offsetX * depth * parseFloat(splashIntensitySlider.value);
+          const moveY = offsetY * depth * parseFloat(splashIntensitySlider.value);
+          splash.style.left = (originX + moveX) + 'px';
+          splash.style.top = (originY + moveY) + 'px';
+        });
+      });
+      
+      // Regenerate splashes on window resize for better distribution
+      window.addEventListener('resize', function() {
+        if (splashToggle.checked) {
+          generateSplashes();
+        }
+      });
+      
+    })();
+  </script>
+</body>
+</html>
